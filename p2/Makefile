@@ -1,17 +1,17 @@
 CC = gcc
-CFLAGS =-I.
-DEPS = 
+CFLAGS = -Wall -pthread
+LDFLAGS = -pthread
 
-%.o: %.c $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS)
+all: P1 P2 P3
 
-all: server client
+P1: P1.c stub.c
+	$(CC) $(CFLAGS) -o P1 P1.c stub.c $(LDFLAGS)
 
-server: server.c
-	$(CC) $(CFLAGS) server.c -o server
+P2: P2.c stub.c
+	$(CC) $(CFLAGS) -o P2 P2.c stub.c $(LDFLAGS)
 
-client: client.c
-	$(CC) $(CFLAGS) client.c -o client
+P3: P3.c stub.c
+	$(CC) $(CFLAGS) -o P3 P3.c stub.c $(LDFLAGS)
 
 clean:
-	rm -f server client
+	rm -f P1 P2 P3
