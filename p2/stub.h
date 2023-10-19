@@ -3,6 +3,14 @@
     Author: Rubén Bautista Barajas
     Date: 16/10/2023
 -----------------------------------*/
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <pthread.h>
+#include <netinet/in.h>
 
 #ifndef STUB_H
 #define STUB_H
@@ -19,9 +27,11 @@ struct message {
     unsigned int clock_lamport;
 };
 
-int initialize_stub(const char *ip, int port);
+int initialize_stub(char *ip, int port);
 
-void finalize_stub();
+void start_server(char *name, int port);
+
+void close_socket();
 
 int get_clock_lamport();
 
