@@ -11,18 +11,24 @@
 
 int conexion_socket;
 
-static int socket_fd;
-static struct sockaddr_in server_addr;
+int socket_fd;
+static struct sockaddr_in my_addr;
 static int lamport_clock = 0;
+
 
 
 void start_server(char *name, int port){
     setbuf(stdout, NULL);
     pthread_t thread[MAX_CLIENTS];
-    struct sockaddr_in server_addr, client_addr;
+    struct sockaddr_in my_addr, client_addr;
     int i;
 
     conexion_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+    //Configurar la dirección del servidor
+    my_addr.sin_family = AF_INET;
+    my_addr.sin_port = htons(port);
+    my_addr.sin_addr.s_addr = INADDR_ANY;
 
     if(conexion_socket < 0){
         perror("Error creating socket");
@@ -32,10 +38,7 @@ void start_server(char *name, int port){
         printf("Server Socket successfully created...\n");
     }
 
-    //Configurar la dirección del servidor
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(port);
-    server_addr.sin_addr.s_addr = INADDR_ANY;
+
 
     if(setsockopt(conexion_socket, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0){
         perror("Error setting socket options");
@@ -45,16 +48,52 @@ void start_server(char *name, int port){
         printf("Socket options successfully set...\n");
     }   
 
-    if(bind(conexion_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0){
+    if(bind(conexion_socket, (struct sockaddr *)&my_addr, sizeof(my_addr)) < 0){
         perror("Error binding socket");
         exit(EXIT_FAILURE);
     }
     else{
         printf("Socket successfully binded...\n");
     }
+
+    if(listen(conexion_socket, MAX_CLIENTS) < 0){
+        perror("Error listening socket");
+        exit(EXIT_FAILURE);
+    }
+    else{
+        printf("Socket listening...\n");
+    }
+
+    for(i = 0; i < MAX_CLIENTS; i++){
+        int client_addr_size = sizeof(client_addr);
+        int client_socket = accept(conexion_socket, (struct sockaddr *)&client_addr, (socklen_t *)&client_addr_size);
+        if(client_socket < 0){
+            perror("Error accepting client");
+            exit(EXIT_FAILURE);
+        }
+        else{
+            printf("Client accepted...\n");
+        }        
+    }
 }
 
 int initialize_stub(char *server_ip, int server_port) {
+    
+    setbuf(stdout, NULL);
+    struct sockaddr_in my_addr;
+
+
+    // Configurar la dirección del servidor
+    my_addr.sin_family = AF_INET;
+    my_addr.sin_addr.s_addr = inet_addr(server_ip);
+    my_addr.sin_port = htons(server_port);
+
+    // Connect to server
+    if (inet_pton(AF_INET, server_ip, &(my_addr.sin_addr)) < 0) {
+        perror("Error al configurar la dirección del servidor");
+        return -1;
+    }
+
     // Crear un socket
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd == -1) {
@@ -62,16 +101,8 @@ int initialize_stub(char *server_ip, int server_port) {
         return -1;
     }
 
-    // Configurar la dirección del servidor
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(server_port);
-    if (inet_pton(AF_INET, server_ip, &(server_addr.sin_addr)) < 0) {
-        perror("Error al configurar la dirección del servidor");
-        return -1;
-    }
-
     // Conectar al servidor
-    if (connect(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr) < 0)) {
+    if (connect(socket_fd, (struct sockaddr *)&my_addr, sizeof(my_addr)) < 0) {
         perror("Error al conectar al servidor");
         return -1;
     }
@@ -99,7 +130,7 @@ void send_message(const char *destination, enum operations action) {
 
     // Simula el envío del mensaje a través del socket
     sendto(socket_fd, &msg, sizeof(struct message), 0,
-           (struct sockaddr *)&server_addr, sizeof(server_addr));
+           (struct sockaddr *)&my_addr, sizeof(my_addr));
 
     // Actualiza el reloj de Lamport después de enviar el mensaje
     lamport_clock++;
