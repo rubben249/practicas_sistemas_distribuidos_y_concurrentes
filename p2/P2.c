@@ -17,11 +17,6 @@ int main(int argc, char *argv[]) {
 
     start_server(server_ip, server_port);
 
-
-    while (get_clock_lamport() == 0){
-        continue;
-    }
-
     // Espera a recibir un mensaje de P1
     struct message msg = receive_message();
     if (msg.action == READY_TO_SHUTDOWN) {

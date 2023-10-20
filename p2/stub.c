@@ -12,9 +12,8 @@
 int conexion_socket;
 
 int socket_fd;
-static struct sockaddr_in my_addr;
-static int lamport_clock = 0;
-
+struct sockaddr_in my_addr;
+int lamport_clock = 0;
 
 
 void start_server(char *name, int port){
@@ -113,12 +112,7 @@ int initialize_stub(char *server_ip, int server_port) {
 
 void close_socket() {
     close(socket_fd);
-    exit(0);
-    // Realiza la limpieza de recursos necesaria
-}
-
-int get_clock_lamport() {
-    return lamport_clock;
+    exit(EXIT_SUCCESS);
 }
 
 void send_message(const char *destination, enum operations action) {
@@ -126,14 +120,15 @@ void send_message(const char *destination, enum operations action) {
     memset(&msg, 0, sizeof(struct message));
     strncpy(msg.origin, "P2", sizeof(msg.origin));
     msg.action = action;
-    msg.clock_lamport = lamport_clock;
+
+    // Actualiza el reloj de Lamport después de enviar el mensaje
+    lamport_clock++;
+    msg.clock_lamport == lamport_clock;
 
     // Simula el envío del mensaje a través del socket
     sendto(socket_fd, &msg, sizeof(struct message), 0,
            (struct sockaddr *)&my_addr, sizeof(my_addr));
 
-    // Actualiza el reloj de Lamport después de enviar el mensaje
-    lamport_clock++;
 }
 
 struct message receive_message() {
@@ -142,9 +137,10 @@ struct message receive_message() {
 
     // Simula la recepción de un mensaje a través del socket
     recvfrom(socket_fd, &msg, sizeof(struct message), 0, NULL, NULL);
-
-    // Actualiza el reloj de Lamport después de recibir el mensaje
-    lamport_clock = (msg.clock_lamport > lamport_clock) ? msg.clock_lamport + 1 : lamport_clock + 1;
+    if(msg.clock_lamport > lamport_clock){
+        lamport_clock = msg.clock_lamport;
+    }
+    // Actualiza el reloj de Lamport después de recibir el mensaje 
     lamport_clock++;
 
     return msg;

@@ -9,31 +9,18 @@
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         fprintf(stderr, "Uso: %s <IP del servidor> <puerto del servidor>\n", argv[0]);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
-
     char *server_ip = argv[1];
     int server_port = atoi(argv[2]);
-
-    if(initialize_stub(server_ip, server_port)){
-        fprintf(stderr, "Error al inicializar el stub.\n");
-        exit(1);
-    }
-
-    while (get_clock_lamport() == 0){
-        continue;
-    }
+    initialize_stub(server_ip, server_port);
 
     send_message("P2", READY_TO_SHUTDOWN);
 
-    while (get_clock_lamport() == 2){
-        continue;
-    }
-       
     // Espera recibir la orden de P2 para apagarse
     struct message msg = receive_message();
 
-    while (get_clock_lamport() == 3){
+    while (get_clock_lamport() == 5){
         continue;
     }
     
